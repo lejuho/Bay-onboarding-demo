@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>해시 체인 — 위조는 들킨다</title>
+<style>
+  :root{
+    --bg:#0f1320; --panel:#171c2e; --card:#1d2438; --ink:#e8ecf6; --mut:#8b94ad;
+    --line:#2b3450; --teal:#36d6b8; --teal2:#1f9d86; --red:#ff5d6c; --amber:#ffc24b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+       background:radial-gradient(1200px 600px at 50% -10%,#1a2138,var(--bg));color:var(--ink);
+       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;
+       -webkit-tap-highlight-color:transparent}
+  .mono{font-family:"SF Mono","Roboto Mono",ui-monospace,monospace}
+  .wrap{width:100%;max-width:460px}
+
+  .gate{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:38px 28px;text-align:center;
+        box-shadow:0 24px 60px rgba(0,0,0,.45)}
+  .glyph{font-size:34px;cursor:pointer;user-select:none;display:inline-block}
+  .gate h1{font-size:19px;margin:14px 0 6px;letter-spacing:-.4px}
+  .gate p{color:var(--mut);font-size:13.5px;line-height:1.6;margin-bottom:22px}
+  input{width:100%;padding:14px 15px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;
+        font-size:16px;font-family:inherit;outline:none;color:var(--ink)}
+  input:focus{border-color:var(--teal)}
+  .btn{width:100%;padding:14px;border:none;border-radius:12px;background:var(--teal2);color:#fff;
+       font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:12px;transition:transform .12s}
+  .btn:active{transform:scale(.98)}
+
+  .hidden{display:none}
+  .head{text-align:center;margin-bottom:16px}
+  .head h2{font-size:17px;letter-spacing:-.4px}
+  .head p{font-size:12.5px;color:var(--mut);margin-top:5px;line-height:1.5}
+  .head b{color:var(--teal)}
+
+  .block{background:var(--card);border:1.5px solid var(--line);border-radius:15px;padding:15px 16px;margin-bottom:12px;
+         position:relative;transition:border-color .25s,box-shadow .25s,background .25s}
+  .block.bad{border-color:var(--red);background:#241620;box-shadow:0 0 0 1px var(--red),0 10px 30px rgba(255,93,108,.18)}
+  .block .bn{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+  .block .bn .name{font-size:13px;font-weight:800;letter-spacing:.3px}
+  .badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px}
+  .badge.ok{background:rgba(54,214,184,.14);color:var(--teal)}
+  .badge.no{background:rgba(255,93,108,.16);color:var(--red)}
+  .badge.warn{background:rgba(255,194,75,.16);color:var(--amber)}
+  .block.edited{border-color:var(--amber);background:#241f12;box-shadow:0 0 0 1px var(--amber)}
+  .fld{margin-bottom:9px}
+  .fld label{display:block;font-size:10.5px;color:var(--mut);letter-spacing:.4px;margin-bottom:3px;text-transform:uppercase}
+  .fld input.data{width:100%;padding:9px 11px;font-size:14px;border-radius:9px;
+                  background:#121829;border:1px solid var(--line);color:var(--ink);font-family:inherit}
+  .fld input.data:focus{border-color:var(--teal);outline:none}
+  .hashrow{font-size:11.5px;padding:8px 10px;border-radius:8px;background:#0e1626;color:var(--mut);
+           word-break:break-all;line-height:1.5;border:1px solid #1b2540}
+  .hashrow.prev{opacity:.85}
+  .hashrow .hx{color:var(--teal)}
+  .block.bad .hashrow .hx{color:var(--red)}
+  .mismatch{color:var(--red);font-weight:700;font-size:11px;margin-top:5px;display:none}
+  .block.bad .mismatch{display:block}
+
+  .link{height:16px;width:2px;background:var(--line);margin:-6px auto 6px;position:relative}
+  .link.broken{background:repeating-linear-gradient(var(--red) 0 3px,transparent 3px 6px)}
+
+  .note{margin-top:6px;padding:15px 17px;border-radius:13px;font-size:13.5px;line-height:1.7;
+        background:var(--panel);border-left:4px solid var(--teal)}
+  .note.warn{border-color:var(--red)}
+  .note b{display:block;margin-bottom:4px}
+  .reset{margin-top:12px;background:#283150;color:#fff;border:none;padding:12px;border-radius:11px;
+         font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;width:100%}
+
+  .host{position:fixed;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:7px;flex-wrap:wrap;
+        background:rgba(10,14,24,.95);border:1px solid var(--line);padding:8px;border-radius:12px;z-index:60;justify-content:center}
+  .host.hidden{display:none}
+  .host button{border:none;background:#283150;color:#fff;font-size:12px;padding:8px 11px;border-radius:8px;
+               font-family:inherit;font-weight:600;cursor:pointer}
+  .host .tag{color:var(--mut);font-size:11px;align-self:center;padding:0 3px}
+  .who{font-size:12px;color:var(--mut);text-align:center;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="gate" class="gate">
+    <div class="glyph" id="glyph">🔗</div>
+    <h1>해시 체인 — 위조는 들킨다</h1>
+    <p>블록들이 해시로 사슬처럼 연결돼 있어요.<br>이 장부를 몰래 고칠 수 있을까요? 직접 해보세요.</p>
+    <input id="name" placeholder="이름을 입력하세요" autocomplete="off" maxlength="12">
+    <button class="btn" id="join">장부 열기</button>
+  </div>
+
+  <div id="main" class="hidden">
+    <div class="head">
+      <h2>🔗 우리의 장부</h2>
+      <p>블록의 내용을 <b>직접 고쳐</b> 보세요. 무슨 일이 일어나는지 보세요.</p>
+    </div>
+    <div class="who" id="who"></div>
+    <div id="chain"></div>
+    <div id="msgZone"></div>
+    <button class="reset" id="reset" style="display:none">장부 되돌리기</button>
+  </div>
+</div>
+
+<div class="host hidden" id="host">
+  <span class="tag">진행자</span>
+  <button id="hTamper">2번 블록 몰래 조작</button>
+  <button id="hReset">처음으로</button>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const enc=new TextEncoder();
+const DEFAULT=['BAY 첫 거래: 민수 → 영희 5만원','회비 입금: 12명 × 1만원','빵 구매: 영희 → 빵집 3천원'];
+let blocks=[]; // {data, prevHash, hash}
+const GEN='0'.repeat(8);
+
+async function sha(str){
+  const buf=await crypto.subtle.digest('SHA-256',enc.encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+const short=h=>h.slice(0,16)+'…';
+
+$('join').onclick=()=>{const v=$('name').value.trim();if(!v){$('name').focus();return;}
+  $('who').textContent=v+' 님의 장부'; $('gate').classList.add('hidden'); $('main').classList.remove('hidden');
+  build();};
+$('name').addEventListener('keydown',e=>{if(e.key==='Enter')$('join').click();});
+
+async function build(){
+  blocks=[]; let prev=GEN;
+  for(const d of DEFAULT){ const h=await sha(prev+d); blocks.push({data:d,prevHash:prev,hash:h}); prev=h; }
+  // prevHash는 '기록된 값'으로 고정 — 이후 수정해도 절대 바뀌지 않음
+  render();
+}
+
+function render(){
+  const c=$('chain'); c.innerHTML='';
+  blocks.forEach((b,i)=>{
+    if(i>0){ const lk=document.createElement('div'); lk.className='link'; lk.id='lnk'+i; c.appendChild(lk); }
+    const el=document.createElement('div');
+    el.className='block'; el.id='blk'+i;
+    el.innerHTML=`
+      <div class="bn"><span class="name">블록 #${i+1}</span>
+        <span class="badge ok" id="bdg${i}">✓ 유효</span></div>
+      <div class="fld"><label>데이터 (직접 수정 가능)</label>
+        <input class="data" data-i="${i}" value="${b.data.replace(/"/g,'&quot;')}"></div>
+      <div class="fld"><label>기록된 이전 블록 해시</label>
+        <div class="hashrow prev mono" id="prev${i}"></div></div>
+      <div class="fld"><label>이 블록의 해시</label>
+        <div class="hashrow mono" id="hash${i}"></div>
+        <div class="mismatch" id="mm${i}"></div></div>`;
+    c.appendChild(el);
+  });
+  c.querySelectorAll('input.data').forEach(inp=>{
+    inp.addEventListener('input',e=>edit(+e.target.dataset.i,e.target.value));
+  });
+  refresh();
+}
+
+// 검증: '기록된 이전 해시'(고정)와 '실제 앞 블록의 현재 해시'를 비교
+function refresh(){
+  const linkOK = blocks.map((b,i)=> i===0 ? (b.prevHash===GEN) : (b.prevHash===blocks[i-1].hash));
+  const valid=[]; let ok=true;
+  for(let i=0;i<blocks.length;i++){ ok = ok && linkOK[i]; valid[i]=ok; }
+  const changed = blocks.map((b,i)=> b.data!==DEFAULT[i]);
+
+  blocks.forEach((b,i)=>{
+    const blk=$('blk'+i), bdg=$('bdg'+i), mm=$('mm'+i);
+    $('prev'+i).innerHTML = i===0 ? '(최초 블록 · 0000…)' : '<span class="hx">'+short(b.prevHash)+'</span>';
+    $('hash'+i).innerHTML = '<span class="hx">'+short(b.hash)+'</span>';
+    blk.classList.remove('bad','edited');
+    if(i>0) $('lnk'+i).classList.remove('broken');
+    mm.style.display='none'; mm.innerHTML='';
+
+    if(!valid[i]){                          // 사슬이 끊긴 지점 또는 그 하류
+      blk.classList.add('bad'); bdg.className='badge no'; bdg.textContent='⚠ 사슬 끊김';
+      if(i>0) $('lnk'+i).classList.add('broken');
+      mm.style.display='block';
+      if(!linkOK[i]){                        // 바로 여기가 실제로 끊긴 링크
+        mm.innerHTML=`기록된 이전 해시 <b>${short(b.prevHash)}</b><br>≠ 실제 앞 블록 해시 <b>${short(blocks[i-1].hash)}</b>`;
+      } else {                               // 위에서 이미 끊겨 신뢰 불가
+        mm.innerHTML='앞 블록이 이미 무효 → 이 블록도 신뢰할 수 없습니다';
+      }
+    } else if(changed[i]){                   // 내용은 바뀌었지만 사슬은 안 끊김(예: 마지막 블록)
+      blk.classList.add('edited'); bdg.className='badge warn'; bdg.textContent='✎ 수정됨';
+    } else {
+      bdg.className='badge ok'; bdg.textContent='✓ 유효';
+    }
+  });
+  updateMessage(valid, changed);
+}
+
+async function edit(idx,val){
+  blocks[idx].data=val;
+  // 오직 '그 블록 자신의 해시'만 다시 계산. 기록된 prevHash는 절대 바뀌지 않음.
+  blocks[idx].hash = await sha(blocks[idx].prevHash + blocks[idx].data);
+  const inp=document.querySelector(`input.data[data-i="${idx}"]`);
+  if(inp && inp.value!==val) inp.value=val;   // 진행자 버튼 등 프로그램 수정 시 반영
+  refresh();
+}
+
+function updateMessage(valid, changed){
+  const broken = valid.some(v=>!v);
+  if(broken){
+    $('reset').style.display='block';
+    $('msgZone').innerHTML=`<div class="note warn"><b>위조가 즉시 들통났습니다.</b>
+      고친 블록의 해시가 바뀌자, 다음 블록이 <b>기록해 둔 '이전 해시'</b>와 더 이상 맞지 않아 사슬이 끊겼어요.
+      끊긴 지점부터 끝까지 전부 무효가 됩니다.
+      <b style="margin-top:7px">되살리려면 그 뒤 블록들의 해시를 전부 다시 맞춰야 하고, 그게 도미노처럼 번집니다.</b>
+      (그 '다시 만들기'가 왜 사실상 불가능한지는 4주차 — 채굴에서 봅니다.)</div>`;
+  } else if(changed.some(x=>x)){
+    // 사슬은 안 끊겼는데 내용이 바뀜 = 마지막 블록만 수정된 경우
+    $('reset').style.display='block';
+    $('msgZone').innerHTML=`<div class="note"><b>마지막 블록은 이 장부 안에서는 안 들킵니다.</b>
+      뒤에 이 블록을 가리키는 블록이 아직 없어, 사슬만 봐선 멀쩡해 보여요.
+      <b style="margin-top:7px">하지만 이건 내 사본 하나일 뿐 — 다른 모두는 원본 위에 블록을 계속 쌓아갑니다.</b>
+      내 조작본은 그 긴 줄을 못 따라잡아 결국 버려져요. (그 '다수가 이긴다'는 4주차에서.)</div>`;
+  } else {
+    $('msgZone').innerHTML=''; $('reset').style.display='none';
+  }
+}
+
+// 진행자: 2번 블록 조작
+$('hTamper').onclick=()=>{ if(blocks.length<2)return;
+  const inp=document.querySelector('input.data[data-i="1"]');
+  edit(1,'회비 입금: 12명 × 10만원 (조작!)');
+};
+let c=0,ct;$('glyph').addEventListener('click',()=>{c++;clearTimeout(ct);ct=setTimeout(()=>c=0,600);
+  if(c>=3){c=0;$('host').classList.toggle('hidden');}});
+
+function resetAll(){ build(); $('msgZone').innerHTML=''; $('reset').style.display='none'; }
+$('reset').onclick=resetAll;
+$('hReset').onclick=()=>{ $('name').value=''; $('main').classList.add('hidden'); $('gate').classList.remove('hidden');
+  $('host').classList.add('hidden'); };
+</script>
+</body>
+</html>

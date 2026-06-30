@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BAY 온보딩 데모</title>
+<style>
+  :root{
+    --bg:#0c0f17; --panel:#151a26; --ink:#eef1f8; --mut:#8b94ab; --line:#262d3e;
+    --blue:#3b7bff; --teal:#36d6b8; --amber:#ffab2e; --purple:#8a7fe8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+       background:radial-gradient(1200px 600px at 50% -15%,#19233b,var(--bg));color:var(--ink);
+       min-height:100vh;padding:46px 20px;display:flex;flex-direction:column;align-items:center;
+       -webkit-tap-highlight-color:transparent}
+  .wrap{width:100%;max-width:680px}
+  header{text-align:center;margin-bottom:34px}
+  .mark{display:inline-flex;align-items:center;gap:9px;margin-bottom:14px}
+  .mark .b{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#1b3a6b,var(--blue));
+           display:grid;place-items:center;font-weight:800;font-size:17px;color:#fff}
+  .mark b{font-size:18px;letter-spacing:-.3px}
+  header h1{font-size:24px;letter-spacing:-.6px;margin-bottom:8px}
+  header p{color:var(--mut);font-size:14px;line-height:1.6}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+
+  .card{display:block;text-decoration:none;color:inherit;background:var(--panel);
+        border:1px solid var(--line);border-left-width:4px;border-radius:15px;padding:20px;
+        transition:transform .14s ease,border-color .2s,background .2s;position:relative;overflow:hidden}
+  .card:hover{transform:translateY(-3px)}
+  .card:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .card .wk{font-size:11.5px;font-weight:800;letter-spacing:1px;color:var(--mut)}
+  .card h2{font-size:18px;margin:8px 0 6px;letter-spacing:-.4px}
+  .card p{font-size:13px;color:var(--mut);line-height:1.55;min-height:38px}
+  .card .go{margin-top:14px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+  .card .ic{position:absolute;top:16px;right:18px;font-size:22px;opacity:.85}
+
+  .c1{border-left-color:var(--blue)}  .c1 .wk,.c1 .go{color:var(--blue)}
+  .c1:hover{background:#141b2e;border-color:var(--blue)}
+  .c2{border-left-color:var(--teal)}  .c2 .wk,.c2 .go{color:var(--teal)}
+  .c2:hover{background:#102220;border-color:var(--teal)}
+  .c3{border-left-color:var(--amber)} .c3 .wk,.c3 .go{color:var(--amber)}
+  .c3:hover{background:#231b0f;border-color:var(--amber)}
+  .c4{border-left-color:var(--purple)}.c4 .wk,.c4 .go{color:var(--purple)}
+  .c4:hover{background:#1a1830;border-color:var(--purple)}
+
+  .tip{margin-top:26px;padding:15px 18px;background:var(--panel);border:1px solid var(--line);
+       border-radius:13px;font-size:13px;color:var(--mut);line-height:1.7}
+  .tip b{color:var(--ink)}
+  footer{margin-top:22px;text-align:center;color:#5a637a;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><span class="b">B</span><b>Blockchain at Yonsei</b></div>
+    <h1>온보딩 개념 데모</h1>
+    <p>각 데모를 본인 기기에서 열어 직접 체험해 보세요.<br>주차에 맞춰 진행자가 안내합니다.</p>
+  </header>
+
+  <div class="grid">
+    <a class="card c1" href="bank.html">
+      <span class="ic">🏦</span>
+      <div class="wk">1주차</div>
+      <h2>BAY 은행</h2>
+      <p>은행이 장부를 쥐면 무슨 일이 생기나 — 중앙화된 신뢰의 문제.</p>
+      <span class="go">열기 →</span>
+    </a>
+
+    <a class="card c2" href="hashchain.html">
+      <span class="ic">🔗</span>
+      <div class="wk">2주차</div>
+      <h2>해시 체인</h2>
+      <p>블록을 몰래 고쳐 보세요 — 위조가 왜 즉시 들키는지(불변성).</p>
+      <span class="go">열기 →</span>
+    </a>
+
+    <a class="card c3" href="mining.html">
+      <span class="ic">⛏️</span>
+      <div class="wk">4주차</div>
+      <h2>작업증명 채굴</h2>
+      <p>직접 채굴해 보세요 — 난이도가 오르면 왜 위조를 다시 못 하나.</p>
+      <span class="go">열기 →</span>
+    </a>
+
+    <a class="card c4" href="computer.html">
+      <span class="ic">💻</span>
+      <div class="wk">5주차</div>
+      <h2>이더리움 컴퓨터</h2>
+      <p>무한루프로 멈춰 보고 — 가스가 어떻게 그걸 막는지.</p>
+      <span class="go">열기 →</span>
+    </a>
+  </div>
+
+  <footer>BAY 18기 온보딩 · 개념 체험용 데모</footer>
+</div>
+</body>
+</html>
