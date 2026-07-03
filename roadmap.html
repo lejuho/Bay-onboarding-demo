@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BAY 온보딩 지도 · 노드 탐험</title>
+<style>
+  :root{
+    --bg:#0b0e16; --panel:#141a28; --panel2:#1b2233; --ink:#eef1f8; --mut:#8b94ab;
+    --line:#283044; --btc:#ffab2e; --eth:#8a7fe8; --app:#36d6b8; --net:#4f8cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+       background:radial-gradient(1200px 700px at 50% -10%,#161f38,var(--bg));color:var(--ink);
+       min-height:100vh;padding:34px 16px 70px;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+  .wrap{width:100%;max-width:660px;margin:0 auto}
+  header{text-align:center;margin-bottom:16px}
+  .mark{display:inline-flex;align-items:center;gap:8px;margin-bottom:10px}
+  .mark .b{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1b3a6b,#3b7bff);
+           display:grid;place-items:center;font-weight:800;font-size:14px;color:#fff}
+  .mark b{font-size:15px;letter-spacing:-.3px}
+  header h1{font-size:21px;letter-spacing:-.5px}
+
+  .picker{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:16px 0 10px}
+  .picker .lab{width:100%;text-align:center;color:var(--mut);font-size:11.5px;margin-bottom:3px}
+  .picker button{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);
+                 background:var(--panel);color:var(--mut);font-family:inherit;font-weight:800;
+                 font-size:13px;cursor:pointer;transition:transform .12s,border-color .2s,color .2s}
+  .picker button:hover{transform:translateY(-2px)}
+  .picker button.on{color:#fff;border-color:#fff}
+
+  .caption{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 15px;
+           text-align:center;margin:6px 0 14px;min-height:52px;display:flex;flex-direction:column;justify-content:center}
+  .caption .t{font-size:14.5px;font-weight:700;letter-spacing:-.3px}
+  .caption .s{font-size:12.5px;color:var(--mut);margin-top:3px;line-height:1.5}
+  .reslinks{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:-4px 0 14px;min-height:34px}
+  .reslinks a,.reslinks .rl{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;
+           padding:8px 13px;border-radius:10px;text-decoration:none;font-family:inherit}
+  .reslinks a{background:var(--panel);border:1px solid var(--line);color:var(--ink);cursor:pointer;
+              transition:transform .12s,border-color .2s}
+  .reslinks a:hover{transform:translateY(-2px);border-color:var(--net)}
+  .reslinks .rl.soon{background:transparent;border:1px dashed var(--line);color:var(--mut);cursor:default}
+
+  .stage{position:relative}
+  .scene.hidden{display:none}
+  @keyframes zin{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+  @keyframes zout{from{opacity:0;transform:scale(1.14)}to{opacity:1;transform:scale(1)}}
+  .scene.anim-in{animation:zin .42s cubic-bezier(.22,.61,.36,1)}
+  .scene.anim-out{animation:zout .42s cubic-bezier(.22,.61,.36,1)}
+
+  /* ── 씬 A: 네트워크 ── */
+  .net{position:relative;height:300px;border-radius:16px;
+       background:radial-gradient(600px 300px at 50% 40%,#131b30,#0e1524);border:1px solid var(--line);overflow:hidden}
+  .net svg{position:absolute;inset:0;width:100%;height:100%}
+  .edge{stroke:#2c3a5c;stroke-width:1.5}
+  .pulse{stroke:var(--net);stroke-width:2;stroke-dasharray:4 10;opacity:.9;animation:flow 1.4s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-28}}
+  .nd{position:absolute;transform:translate(-50%,-50%);text-align:center}
+  .nd .dot{width:38px;height:38px;border-radius:11px;background:linear-gradient(150deg,#20304f,#18223a);
+           border:1px solid #35507f;display:grid;place-items:center;font-size:17px;
+           box-shadow:0 6px 16px rgba(0,0,0,.4);animation:bob 3s ease-in-out infinite}
+  .nd .cap{font-size:10px;color:var(--mut);margin-top:5px}
+  .nd.mine .dot{background:linear-gradient(150deg,#2b3f6b,#22315a);border-color:var(--net);
+                box-shadow:0 0 0 1px var(--net),0 8px 22px rgba(79,140,255,.35);cursor:pointer}
+  .nd.mine .cap{color:var(--net);font-weight:700}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .nd:nth-child(4) .dot{animation-delay:.4s}.nd:nth-child(5) .dot{animation-delay:.8s}
+  .nd:nth-child(6) .dot{animation-delay:1.2s}.nd:nth-child(7) .dot{animation-delay:1.6s}
+  .nd:nth-child(8) .dot{animation-delay:2s}
+  .applayer{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;gap:8px;
+            opacity:0;transition:opacity .45s;pointer-events:none}
+  .applayer.on{opacity:1}
+  .applayer .chip{background:rgba(54,214,184,.14);border:1px solid var(--app);color:var(--app);
+                  font-size:11px;font-weight:700;padding:6px 11px;border-radius:20px}
+  .enter{display:block;width:100%;margin-top:12px;padding:13px;border:none;border-radius:12px;
+         background:var(--net);color:#fff;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;transition:transform .12s}
+  .enter:active{transform:scale(.98)}
+
+  /* ── 씬 B: 바탕화면 ── */
+  .desktop{position:relative;height:320px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+           background:linear-gradient(160deg,#1d2740,#141b2c)}
+  .menubar{display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;font-size:12px;font-weight:700;
+           background:rgba(10,14,24,.55);border-bottom:1px solid var(--line);color:#cdd6e6}
+  .menubar .mback{margin-left:auto;font-weight:600;color:var(--net);cursor:pointer;font-size:11.5px}
+  .icons{position:absolute;top:44px;left:16px;display:flex;flex-direction:column;gap:15px}
+  .dicon{width:80px;text-align:center;cursor:pointer;user-select:none}
+  .dicon .gi{width:56px;height:56px;margin:0 auto;border-radius:14px;display:grid;place-items:center;font-size:27px;
+             background:rgba(255,255,255,.05);border:1px solid var(--line);transition:transform .12s,background .2s}
+  .dicon span{display:block;font-size:11px;margin-top:5px;color:#dbe2f0}
+  .dicon:hover .gi{transform:translateY(-2px)}
+  .dicon.node .gi{background:linear-gradient(150deg,#2b3f6b,#22315a);border-color:var(--net);
+                  box-shadow:0 0 0 1px var(--net),0 8px 20px rgba(79,140,255,.3)}
+  .dicon.node span{color:var(--net);font-weight:700}
+  .dicon.shake{animation:shk .4s}
+  @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  .deskhint{position:absolute;bottom:14px;left:16px;right:16px;font-size:12px;color:#c3ccdd;
+            background:rgba(10,14,24,.55);border:1px solid var(--line);border-radius:10px;padding:10px 12px;line-height:1.5}
+  .deskhint b{color:var(--net)}
+  .terminal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);width:80%;max-width:350px;
+            background:#0a0e17;border:1px solid #2a3550;border-radius:10px;opacity:0;pointer-events:none;
+            transition:opacity .25s,transform .25s;box-shadow:0 20px 50px rgba(0,0,0,.6);z-index:6}
+  .terminal.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .terminal .tbar{display:flex;align-items:center;gap:5px;padding:7px 10px;font-size:11px;color:#8b94ab;border-bottom:1px solid #1b2540}
+  .terminal .tbar i{width:9px;height:9px;border-radius:50%;background:#3a4560}
+  .terminal .tbody{padding:11px 12px;font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;font-size:11.5px;
+                   color:#7dd3a8;min-height:98px}
+  .terminal .tbody div{padding:1px 0;animation:fade .2s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  /* ── 씬 C: 노드 내부 (흐름 구조도 + 레이어 구획) ── */
+  .nodebox{perspective:1100px}
+  .case{background:#04100a;border:1px solid #123d24;border-radius:13px;padding:0;position:relative;overflow:hidden;
+        transform:rotateX(3deg);transform-origin:top center;
+        box-shadow:0 30px 60px rgba(0,0,0,.6),inset 0 0 70px rgba(0,255,120,.05)}
+  .case::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:4;
+        background:repeating-linear-gradient(rgba(0,255,120,.04) 0 1px,transparent 1px 3px);opacity:.5}
+  .tbarn{display:flex;align-items:center;gap:6px;padding:9px 12px;background:#07160e;border-bottom:1px solid #123d24;
+         font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;font-size:11.5px;color:#4fe08a;position:relative;z-index:5}
+  .tbarn i{width:10px;height:10px;border-radius:50%}
+  .tbarn i:nth-child(1){background:#e06b5e}.tbarn i:nth-child(2){background:#e3b14b}.tbarn i:nth-child(3){background:#5cb867}
+  .tbarn .tt{margin-left:6px;color:#7d8a80}
+  .backn{margin-left:auto;background:transparent;border:1px solid #1c5636;color:#4fe08a;font-family:inherit;
+         font-size:11px;padding:5px 10px;border-radius:7px;cursor:pointer}
+  .cinner{padding:11px 12px 14px;position:relative;z-index:1}
+  .prompt{font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;font-size:12px;color:#4fe08a;margin-bottom:8px}
+  .prompt .b{color:#7dffb0}.prompt .c{color:#2f9d63}
+
+  .flow{position:relative;width:100%;height:540px}
+  .wires{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+  .wire{stroke:#1f6b3e;stroke-width:2;fill:none}
+  .wire.sig{stroke:#5effa0;stroke-width:2.5;opacity:.28;filter:drop-shadow(0 0 3px rgba(94,255,160,.7))}
+  .wire.sig-btc{display:none} .wire.sig-eth{display:none}
+  .case.mode-btc .wire.sig-btc{display:block;animation:sigB 4.2s linear infinite}
+  .case.mode-eth .wire.sig-eth{display:block;animation:sigE 4.5s linear infinite}
+  @keyframes sigB{0%,10%{opacity:.28}16%,24%{opacity:1}30%,100%{opacity:.28}}
+  @keyframes sigE{0%,36%{opacity:.28}42%,50%{opacity:1}56%,100%{opacity:.28}}
+  .wlabel{position:absolute;transform:translate(-50%,-50%);font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;
+          font-size:10px;color:#3f9e68;z-index:3;white-space:nowrap}
+  .wlabel.sig{color:#6fe0a0}
+  .fbox.wallet{left:84%;top:38%;width:24%;
+               transition:top .45s cubic-bezier(.22,.61,.36,1),box-shadow .25s,border-color .25s,opacity .25s}
+  .case.mode-btc .fbox.wallet{top:11%}
+  .wlabel.sig-btc,.wlabel.sig-eth{display:none}
+  .case.mode-btc .wlabel.sig-btc{display:block}
+  .case.mode-eth .wlabel.sig-eth{display:block}
+  .case.mode-btc .wlabel.exec{opacity:.28}
+  .netin{position:absolute;left:40%;top:1%;transform:translateX(-50%);z-index:3;
+         font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;font-size:10px;color:#3f9e68}
+  .netout{position:absolute;left:40%;bottom:0;transform:translateX(-50%);z-index:3;
+          font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;font-size:10px;color:#3f9e68}
+  /* 4주차 전용: 다른 노드의 블록 수신 → 재검증 → 장부 반영 */
+  .brecv{display:none}
+  .case.show-brecv.mode-btc .brecv-btc{display:block}
+  .case.show-brecv.mode-eth .brecv-eth{display:block}
+  .case.show-brecv .brecv-any{display:block}
+  .netout-wire{stroke:#e3b14b;stroke-width:2;stroke-dasharray:4 3;opacity:.9;
+               filter:drop-shadow(0 0 3px rgba(227,177,75,.45));animation:brecvflow 1.5s linear infinite}
+  .pkblk{position:absolute;transform:translate(-50%,-50%);z-index:7;font-size:16px;
+         filter:drop-shadow(0 0 5px rgba(227,177,75,.85))}
+  .pkout{left:40%;animation:pkOut 4.2s linear infinite}
+  @keyframes pkOut{0%{top:83%;opacity:0}12%{opacity:1}60%{top:101%;opacity:1}72%{top:106%;opacity:0}100%{top:83%;opacity:0}}
+  .pkrecv-btc{top:84%;animation:pkRB 3.6s linear infinite}
+  @keyframes pkRB{0%{left:97%;opacity:0}12%{opacity:1}70%{left:74%;opacity:1}82%{left:70%;opacity:0}100%{opacity:0}}
+  .pkrecv-eth{animation:pkRE 4.6s linear infinite}
+  @keyframes pkRE{0%{left:94%;top:54%;opacity:0}8%{opacity:1}38%{left:64%;top:54%;opacity:1}
+                  46%{left:46%;top:57%;opacity:1}85%{left:46%;top:75%;opacity:1}93%{left:46%;top:79%;opacity:0}100%{opacity:0}}
+  /* 지갑이 새 거래를 만들어 바깥으로 내보냄(→전파돼 다시 멤풀로). 초록=트랜잭션 */
+  .gen-wire{stroke:#4fe08a;stroke-width:2;stroke-dasharray:3 3;opacity:.85;animation:brecvflow 1.4s linear infinite}
+  .gen-btc,.gen-eth{display:none}
+  .case.mode-btc .gen-btc{display:block}
+  .case.mode-eth .gen-eth{display:block}
+  .pkgen{position:absolute;transform:translate(-50%,-50%);z-index:7;font-size:14px;
+         filter:drop-shadow(0 0 4px rgba(79,224,138,.8))}
+  .case.mode-btc .pkgen{animation:genB 3.4s linear infinite}
+  .case.mode-eth .pkgen{animation:genE 3.4s linear infinite}
+  @keyframes genB{0%{left:84%;top:11%;opacity:0}15%{opacity:1}75%{left:84%;top:1%;opacity:1}90%{top:-3%;opacity:0}100%{opacity:0}}
+  @keyframes genE{0%{left:84%;top:38%;opacity:0}15%{opacity:1}75%{left:97%;top:38%;opacity:1}90%{left:101%;opacity:0}100%{opacity:0}}
+  .brecv-wire{stroke:#e3b14b;stroke-width:2;stroke-dasharray:4 3;opacity:.9;
+              filter:drop-shadow(0 0 3px rgba(227,177,75,.5));animation:brecvflow 1.5s linear infinite}
+  @keyframes brecvflow{to{stroke-dashoffset:-14}}
+  .brecv-lab{position:absolute;transform:translate(-50%,-50%);z-index:3;text-align:center;line-height:1.4;
+             font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;font-size:9.5px;color:#e0b968}
+
+  .fbox{position:absolute;transform:translate(-50%,0);background:#050f0a;border:1px solid #143b25;border-left-width:3px;
+        border-radius:9px;padding:11px 13px;cursor:pointer;z-index:5;
+        font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;
+        transition:box-shadow .25s,border-color .25s,opacity .25s;box-shadow:0 8px 18px rgba(0,0,0,.4)}
+  .fbox .ic{font-size:17px}
+  .fbox h4{font-size:13px;margin:5px 0 2px;color:#8affc0}
+  .fbox h4::before{content:"> ";color:#2f9d63}
+  .fbox p{font-size:10.5px;color:#5f9c78;line-height:1.4}
+  .fbox .wk{position:absolute;top:9px;right:10px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;
+            font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+  .fbox .here{display:none;margin-top:7px;font-size:10px;font-weight:800;align-items:center;gap:5px}
+  .fbox .here .d{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .fbox.btc{border-left-color:var(--btc)} .fbox.eth{border-left-color:var(--eth)}
+  .fbox.btc .wk{color:var(--btc);background:rgba(255,171,46,.12);border:1px solid rgba(255,171,46,.4)}
+  .fbox.eth .wk{color:var(--eth);background:rgba(138,127,232,.12);border:1px solid rgba(138,127,232,.4)}
+  .fbox .opn{color:#3f9e68;font-size:9.5px;font-family:-apple-system,system-ui,sans-serif;font-weight:700}
+  .evminner{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .fbox.open .evminner{max-height:140px;margin-top:9px}
+  .fsub{background:#071a10;border:1px solid #1c5636;border-left:3px solid var(--eth);border-radius:7px;
+        padding:9px 11px;position:relative;font-size:11.5px;color:#8affc0}
+  .fsub .sp{display:block;font-size:10px;color:#5f9c78;margin-top:2px}
+  .fsub .wk2{position:absolute;top:8px;right:9px;font-size:9px;font-weight:800;color:var(--eth);
+             background:rgba(138,127,232,.12);border:1px solid rgba(138,127,232,.4);padding:2px 6px;border-radius:20px;
+             font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+  .fsub .here{display:none;margin-top:6px;font-size:10px;font-weight:800;align-items:center;gap:5px;color:#3bff87}
+  .fsub .here .d{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  /* 이더리움이 얹은 층 (구획 프레임) */
+  .ethzone{position:absolute;transform:translate(-50%,0);border:1px dashed #4a3f86;border-radius:12px;
+           background:rgba(138,127,232,.06);padding:17px 11px 11px;z-index:2;transition:opacity .3s,filter .3s}
+  .ethzone .zlab{position:absolute;top:-8px;left:13px;background:#04100a;padding:0 7px;font-size:9.5px;
+                 color:#a99cff;font-family:"SF Mono","Roboto Mono",ui-monospace,monospace;font-weight:700}
+  .ethzone .fbox.inzone{position:relative;left:auto;top:auto;transform:none;width:auto}
+  .ethzone .lock{display:none}
+  .case.mode-btc .ethzone{opacity:.85;filter:grayscale(.55)}
+  .case.mode-btc .ethzone .lock{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;
+             background:rgba(4,16,10,.74);border-radius:12px;color:#c9c2ff;font-size:11px;font-weight:700;gap:6px;
+             font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+             z-index:6;text-align:center;padding:8px;line-height:1.5}
+  .case.mode-btc .ethzone .fbox{pointer-events:none}
+
+  .case.has-current .fbox{opacity:.82}
+  .fbox.current{opacity:1;border-color:#3bff87;box-shadow:0 0 0 1px #3bff87,0 14px 30px rgba(59,255,135,.22)}
+  .fbox.current h4{color:#c4ffdd}
+  .fbox.current .here{display:inline-flex;color:#3bff87}
+  .fsub.current{border-color:#3bff87;box-shadow:0 0 0 1px #3bff87}
+  .fsub.current .here{display:inline-flex}
+
+  .pk{position:absolute;left:40%;transform:translate(-50%,-50%);z-index:7;font-size:19px;
+      filter:drop-shadow(0 0 6px rgba(59,255,135,.85))}
+  .case.mode-eth .pk{animation:pkEth 4.5s cubic-bezier(.5,0,.5,1) infinite}
+  .case.mode-btc .pk{animation:pkBtc 4.2s cubic-bezier(.45,0,.55,1) infinite}
+  @keyframes pkEth{0%{top:4%;opacity:0}6%{opacity:1}14%{top:13%}42%{top:48%}50%{top:48%}
+                   84%{top:84%}90%{top:84%;opacity:1}96%{opacity:0}100%{top:4%;opacity:0}}
+  @keyframes pkBtc{0%{top:4%;opacity:0}6%{opacity:1}16%{top:13%}84%{top:84%}90%{top:84%;opacity:1}
+                   96%{opacity:0}100%{top:4%;opacity:0}}
+
+  .legend{display:flex;gap:14px;justify-content:center;margin-top:16px;font-size:11px;color:var(--mut);flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .foot{text-align:center;color:#5a637a;font-size:11px;margin-top:16px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><span class="b">B</span><b>Blockchain at Yonsei</b></div>
+    <h1>온보딩 지도 · 노드 탐험</h1>
+  </header>
+
+  <div class="picker" id="picker"><span class="lab">지금 몇 주차인가요?</span></div>
+  <div class="caption" id="caption"></div>
+  <div class="reslinks" id="reslinks"></div>
+
+  <div class="stage">
+    <!-- 씬 A: 네트워크 -->
+    <div class="scene" id="sceneNet">
+      <div class="net">
+        <svg viewBox="0 0 660 300" preserveAspectRatio="none">
+          <line class="edge" x1="330" y1="150" x2="120" y2="70"/>
+          <line class="edge" x1="330" y1="150" x2="560" y2="80"/>
+          <line class="edge" x1="330" y1="150" x2="100" y2="230"/>
+          <line class="edge" x1="330" y1="150" x2="550" y2="235"/>
+          <line class="edge" x1="330" y1="150" x2="330" y2="258"/>
+          <line class="pulse" x1="330" y1="150" x2="120" y2="70"/>
+          <line class="pulse" x1="330" y1="150" x2="560" y2="80"/>
+          <line class="pulse" x1="330" y1="150" x2="100" y2="230"/>
+          <line class="pulse" x1="330" y1="150" x2="550" y2="235"/>
+          <line class="pulse" x1="330" y1="150" x2="330" y2="258"/>
+        </svg>
+        <div class="applayer" id="applayer">
+          <span class="chip">💱 DEX</span><span class="chip">🏦 대출</span><span class="chip">🪙 스테이블코인</span>
+        </div>
+        <div class="nd mine" id="myNode" style="left:50%;top:50%"><div class="dot">💻</div><div class="cap">내 노드 · 열기</div></div>
+        <div class="nd" style="left:18%;top:23%"><div class="dot">💻</div><div class="cap">노드</div></div>
+        <div class="nd" style="left:85%;top:27%"><div class="dot">💻</div><div class="cap">노드</div></div>
+        <div class="nd" style="left:15%;top:77%"><div class="dot">💻</div><div class="cap">노드</div></div>
+        <div class="nd" style="left:83%;top:78%"><div class="dot">💻</div><div class="cap">노드</div></div>
+        <div class="nd" style="left:50%;top:86%"><div class="dot">💻</div><div class="cap">노드</div></div>
+      </div>
+      <button class="enter" id="enterBtn">내 노드가 있는 컴퓨터 열기 →</button>
+    </div>
+
+    <!-- 씬 B: 바탕화면 -->
+    <div class="scene hidden" id="sceneDesktop">
+      <div class="desktop">
+        <div class="menubar">💻 내 컴퓨터<span class="mback" id="deskBack">← 네트워크</span></div>
+        <div class="icons">
+          <div class="dicon" id="icoTrash"><div class="gi">🗑️</div><span>휴지통</span></div>
+          <div class="dicon" id="icoPC"><div class="gi">🖥️</div><span>내 PC</span></div>
+          <div class="dicon node" id="icoNode"><div class="gi">⛓️</div><span>노드 프로그램</span></div>
+        </div>
+        <div class="deskhint">노드도 그냥 이 컴퓨터에서 도는 <b>프로그램 하나</b>예요. <b>노드 프로그램</b>을 열어 안으로 들어가 봅시다.</div>
+        <div class="terminal" id="terminal">
+          <div class="tbar"><i></i><i></i><i></i> &nbsp;node</div>
+          <div class="tbody" id="tbody"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 씬 C: 노드 내부 -->
+    <div class="scene hidden" id="sceneNode">
+      <div class="nodebox">
+        <div class="case" id="case">
+          <div class="tbarn"><i></i><i></i><i></i><span class="tt">bay@node: ~/node</span>
+            <button class="backn" id="backBtn">← 바탕화면</button></div>
+          <div class="cinner">
+            <div class="prompt"><span class="b">bay@node</span>:~$ ./trace-tx &nbsp;<span class="c"># 트랜잭션이 노드 안을 흐르는 길</span></div>
+            <div class="flow">
+              <svg class="wires" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line class="wire" x1="40" y1="2" x2="40" y2="5"/>
+                <line class="wire" x1="40" y1="22" x2="40" y2="33"/>
+                <line class="wire" x1="40" y1="57" x2="40" y2="75"/>
+                <line class="wire netout-wire brecv brecv-any" x1="40" y1="93" x2="40" y2="99"/>
+                <line class="brecv brecv-btc brecv-wire" x1="95" y1="84" x2="74" y2="84"/>
+                <line class="brecv brecv-eth brecv-wire" x1="92" y1="54" x2="64" y2="54"/>
+                <line class="brecv brecv-eth brecv-wire" x1="46" y1="57" x2="46" y2="75"/>
+                <line class="wire sig sig-btc" x1="72" y1="15" x2="62" y2="15"/>
+                <line class="wire sig sig-eth" x1="72" y1="42" x2="62" y2="42"/>
+                <line class="gen-wire gen-btc" x1="84" y1="9" x2="84" y2="1"/>
+                <line class="gen-wire gen-eth" x1="96" y1="38" x2="100" y2="38"/>
+              </svg>
+              <div class="netin">⬇ 네트워크에서 거래 전파</div>
+              <div class="netout brecv brecv-any">🧱 확정된 블록을 네트워크로 전파</div>
+              <div class="pkblk pkout brecv brecv-any">🧱</div>
+              <div class="pkblk pkrecv-btc brecv brecv-btc">🧱</div>
+              <div class="pkblk pkrecv-eth brecv brecv-eth">🧱</div>
+              <div class="brecv brecv-btc brecv-lab" style="left:84%;top:73%">🧱 다른 노드 블록<br>→ 재검증 후 반영</div>
+              <div class="brecv brecv-eth brecv-lab" style="left:84%;top:62%">🧱 다른 노드 블록<br>→ EVM 재실행 검증</div>
+              <div class="wlabel exec" style="left:45%;top:28%">실행</div>
+              <div class="wlabel" style="left:45%;top:66%">기록</div>
+              <div class="wlabel sig sig-btc" style="left:66%;top:11%">서명</div>
+              <div class="wlabel sig sig-eth" style="left:66%;top:39%">서명</div>
+
+              <div class="fbox btc" data-mod="mempool" style="left:40%;top:5%;width:44%">
+                <span class="wk">3주</span><div class="ic">📥</div><h4>멤풀 · 거래</h4><p>밖에서 온 거래가 먼저 대기</p>
+                <span class="here"><span class="d"></span>지금 여기</span></div>
+
+              <div class="fbox btc wallet" data-mod="access">
+                <span class="wk">2주</span><div class="ic">🔑</div><h4>지갑·키</h4><p>서명으로 소유 증명</p>
+                <span class="here"><span class="d"></span>지금 여기</span></div>
+
+              <div class="ethzone" id="ethzone" style="left:40%;top:34%;width:46%">
+                <div class="zlab">🟣 이더리움이 얹은 층 · 5~6주</div>
+                <div class="fbox eth inzone" data-mod="evm" id="evmBox">
+                  <span class="wk">5주</span>
+                  <div class="fhead"><div class="ic">⚙️</div><h4>EVM · 실행기</h4><p>거래를 실행 <span class="opn">▸ 안의 컨트랙트 보기</span></p></div>
+                  <div class="evminner">
+                    <div class="fsub" data-mod="contract" id="contractSub"><span class="wk2">6주</span>📜 스마트 컨트랙트
+                      <span class="sp">EVM 위에서 도는 프로그램</span>
+                      <span class="here"><span class="d"></span>지금 여기</span></div>
+                  </div>
+                  <span class="here"><span class="d"></span>지금 여기</span>
+                </div>
+                <div class="lock">🔒 5주차에 이더리움이<br>여기에 EVM을 얹습니다</div>
+              </div>
+
+              <div class="fbox btc" data-mod="ledger" style="left:40%;top:76%;width:68%">
+                <span class="wk">2·4주</span><div class="ic">📒</div><h4>장부 (블록체인)</h4><p>실행 결과가 최종 기록·보관</p>
+                <span class="here"><span class="d"></span>지금 여기</span></div>
+
+              <div class="wlabel gen-btc" style="left:84%;top:5%">🧾 새 거래 생성</div>
+              <div class="wlabel gen-eth" style="left:92%;top:31%">🧾 새 거래 생성</div>
+              <div class="pkgen">🧾</div>
+              <div class="pk">🧾</div>
+            </div>
+          </div>
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--btc)"></i>공통 토대 · 비트코인 (지갑·멤풀·장부)</span>
+          <span><i style="background:var(--eth)"></i>이더리움이 얹은 층 (EVM·컨트랙트)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">위 숫자를 누르면 그 주에 탐험할 부분이 빛납니다 · 무엇을 배울지는 그 주에 채워집니다</div>
+</div>
+
+<script>
+  const WEEKS={
+    0:{scene:'desktop',mods:[],t:'0주차 · 준비 — 노드 켜기',s:'내 컴퓨터에서 노드 프로그램을 처음 켜고, 지갑을 만듭니다.',app:false},
+    1:{scene:'net',mods:[],t:'1주차 · 왜 블록체인인가',s:'각 점이 누군가의 컴퓨터에서 도는 노드 프로그램. 서로 통신하며 합의합니다.',app:false},
+    2:{scene:'node',mods:['ledger','access'],t:'2주차 · 위조가 불가능한 이유',s:'노드 안의 장부와 지갑 — 해시와 서명을 뜯어봅니다.',app:false},
+    3:{scene:'node',mods:['mempool'],t:'3주차 · 돈은 어떻게 옮겨지나',s:'거래가 대기하는 멤풀 — 트랜잭션과 UTXO.',app:false},
+    4:{scene:'node',mods:['ledger'],t:'4주차 · 누가 장부를 지키나',s:'장부를 지키는 합의 — 채굴과 작업증명. (여기까지가 비트코인)',app:false},
+    5:{scene:'node',mods:['evm'],t:'5주차 · 장부에서 컴퓨터로',s:'이더리움이 노드에 EVM을 얹습니다 — 계정·가스·PoS.',app:false},
+    6:{scene:'node',mods:['contract'],t:'6주차 · 코드가 법이 된다',s:'EVM 위에서 도는 프로그램 — 컨트랙트, 그리고 모이면 DeFi.',app:false},
+    7:{scene:'net',mods:[],t:'7주차 · 현실과의 접점',s:'노드들이 이룬 네트워크 위에서 도는 응용(DeFi). 개발·리서치가 합류합니다.',app:true},
+  };
+  const DEPTH={net:0,desktop:1,node:2};
+  const LINKS={
+    0:{slides:'', homework:''},
+    1:{slides:'', demo:'bank.html', homework:''},
+    2:{slides:'', demo:'hashchain.html', homework:''},
+    3:{slides:'', homework:''},
+    4:{slides:'', demo:'mining.html', homework:''},
+    5:{slides:'', demo:'computer.html', homework:''},
+    6:{slides:'', homework:''},
+    7:{slides:'', homework:''},
+  };
+  const $=id=>document.getElementById(id);
+  const scenes={net:$('sceneNet'),desktop:$('sceneDesktop'),node:$('sceneNode')};
+  let cur='net';
+
+  const picker=$('picker');
+  for(let i=0;i<=7;i++){const b=document.createElement('button');b.textContent=i;b.dataset.wk=i;
+    b.onclick=()=>selectWeek(i);picker.appendChild(b);}
+
+  function cap(t,s){$('caption').innerHTML='<div class="t">'+t+'</div><div class="s">'+s+'</div>';}
+
+  function renderLinks(wk){
+    const L=LINKS[wk]||{}; const box=$('reslinks'); box.innerHTML='';
+    const defs=[['slides','📊','슬라이드'],['demo','🕹️','데모'],['homework','📝','과제']];
+    defs.forEach(function(d){
+      const key=d[0], ic=d[1], label=d[2];
+      if(!(key in L)) return;
+      const url=L[key];
+      if(url){ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener';
+        a.textContent=ic+' '+label; box.appendChild(a); }
+      else { const s=document.createElement('span'); s.className='rl soon';
+        s.textContent=ic+' '+label+' · 준비 중'; box.appendChild(s); }
+    });
+  }
+
+  function go(name){
+    const dir = DEPTH[name] >= DEPTH[cur] ? 'in' : 'out';
+    Object.values(scenes).forEach(s=>s.classList.add('hidden'));
+    const el=scenes[name]; el.classList.remove('hidden','anim-in','anim-out');
+    void el.offsetWidth;
+    el.classList.add(dir==='in'?'anim-in':'anim-out');
+    cur=name;
+  }
+
+  function setMode(m){ const c=$('case'); c.classList.toggle('mode-btc',m==='btc'); c.classList.toggle('mode-eth',m==='eth'); }
+  function setEVM(open){ $('evmBox').classList.toggle('open',open); }
+  function highlight(mods){
+    mods=mods||[];
+    $('case').classList.toggle('has-current', mods.length>0);
+    document.querySelectorAll('[data-mod]').forEach(el=>el.classList.toggle('current', mods.indexOf(el.dataset.mod)>=0));
+    setEVM(mods.indexOf('contract')>=0);
+  }
+  function clearNode(){ $('case').classList.remove('has-current','show-brecv');
+    document.querySelectorAll('[data-mod]').forEach(el=>el.classList.remove('current')); setEVM(false); }
+
+  function selectWeek(wk){
+    const w=WEEKS[wk];
+    cap(w.t,w.s);
+    renderLinks(wk);
+    document.querySelectorAll('.picker button').forEach(b=>b.classList.toggle('on',+b.dataset.wk===wk));
+    $('applayer').classList.toggle('on',!!w.app);
+    go(w.scene);
+    if(w.scene==='node'){ setMode(wk<=4?'btc':'eth'); highlight(w.mods);
+      $('case').classList.toggle('show-brecv', wk>=4 && wk<=6); } else clearNode();
+  }
+
+  // 네트워크 → 바탕화면
+  function toDesktop(){ cap('내 컴퓨터','노드는 여기서 도는 프로그램 하나예요. 노드 프로그램을 열어 안으로 들어가 봅시다.');
+    $('applayer').classList.remove('on'); go('desktop'); clearNode(); }
+  $('enterBtn').onclick=toDesktop; $('myNode').onclick=toDesktop;
+  $('deskBack').onclick=()=>{ cap(WEEKS[1].t,WEEKS[1].s); go('net'); };
+
+  // 바탕화면 → (터미널) → 노드 내부 (자유 탐색: 전체 켜짐)
+  function launchNode(){
+    const term=$('terminal'),body=$('tbody'); term.classList.add('on'); body.innerHTML='';
+    const lines=['$ ./node --start','노드 프로그램 실행 중…','피어 연결: 5개','블록 동기화 …… 100%','내부 진입 준비 완료'];
+    let i=0;(function nx(){
+      if(i<lines.length){const d=document.createElement('div');d.textContent=lines[i];body.appendChild(d);i++;setTimeout(nx,340);}
+      else setTimeout(()=>{ term.classList.remove('on');
+        cap('노드 내부','거래가 멤풀 → EVM → 장부로 흐릅니다. 부품을 눌러 살펴보세요.');
+        go('node'); setMode('eth'); clearNode(); },520);
+    })();
+  }
+  $('icoNode').onclick=launchNode;
+  ['icoTrash','icoPC'].forEach(id=>$(id).onclick=()=>{ const e=$(id);
+    e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake');
+    cap('그건 그냥 평범한 프로그램이에요','우리가 열 건 파란 노드 프로그램입니다.'); });
+
+  // 노드 내부 → 바탕화면
+  $('backBtn').onclick=()=>toDesktop();
+
+  // 부품 직접 탐색
+  document.querySelectorAll('.fbox').forEach(box=>{
+    box.addEventListener('click',e=>{
+      if(e.target.closest('.fsub')) return;
+      $('case').classList.add('has-current');
+      document.querySelectorAll('[data-mod]').forEach(el=>el.classList.toggle('current', el===box));
+      if(box.dataset.mod==='evm'){ box.classList.toggle('open'); }
+      cap(box.querySelector('h4').textContent, box.querySelector('.wk').textContent+'차에 이 부분을 탐험합니다.');
+    });
+  });
+  $('contractSub').addEventListener('click',e=>{ e.stopPropagation();
+    setEVM(true); $('case').classList.add('has-current');
+    document.querySelectorAll('[data-mod]').forEach(el=>el.classList.toggle('current', el.dataset.mod==='contract'));
+    cap('스마트 컨트랙트','6주차에 이 부분을 탐험합니다.');
+  });
+
+  selectWeek(1);
+</script>
+</body>
+</html>
