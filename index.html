@@ -46,6 +46,17 @@
   .c4{border-left-color:var(--purple)}.c4 .wk,.c4 .go{color:var(--purple)}
   .c4:hover{background:#1a1830;border-color:var(--purple)}
 
+  .mapcard{grid-column:1 / -1;display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit;
+           background:linear-gradient(120deg,#12203a,var(--panel));border:1px solid var(--line);
+           border-radius:15px;padding:18px 20px;margin-top:2px;transition:transform .14s ease,border-color .2s}
+  .mapcard:hover{transform:translateY(-3px);border-color:var(--blue)}
+  .mapcard .mi{font-size:26px;flex-shrink:0}
+  .mapcard .mt{flex:1}
+  .mapcard .mt .wk{font-size:11.5px;font-weight:800;letter-spacing:1px;color:var(--blue)}
+  .mapcard .mt h2{font-size:18px;margin:4px 0 3px;letter-spacing:-.4px}
+  .mapcard .mt p{font-size:12.5px;color:var(--mut);line-height:1.5}
+  .mapcard .go{font-size:13px;font-weight:700;color:var(--blue);flex-shrink:0}
+
   .tip{margin-top:26px;padding:15px 18px;background:var(--panel);border:1px solid var(--line);
        border-radius:13px;font-size:13px;color:var(--mut);line-height:1.7}
   .tip b{color:var(--ink)}
@@ -90,6 +101,16 @@
       <div class="wk">5주차</div>
       <h2>이더리움 컴퓨터</h2>
       <p>무한루프로 멈춰 보고 — 가스가 어떻게 그걸 막는지.</p>
+      <span class="go">열기 →</span>
+    </a>
+
+    <a class="mapcard" href="roadmap.html">
+      <span class="mi">🗺️</span>
+      <div class="mt">
+        <div class="wk">전체 지도 · 0~7주</div>
+        <h2>온보딩 노드 탐험 지도</h2>
+        <p>네트워크 → 내 컴퓨터 → 노드 내부. 매주 "지금 여기"를 확인하세요.</p>
+      </div>
       <span class="go">열기 →</span>
     </a>
   </div>
