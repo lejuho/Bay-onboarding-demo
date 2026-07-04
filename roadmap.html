@@ -109,6 +109,20 @@
 
   /* ── 씬 C: 노드 내부 (흐름 구조도 + 레이어 구획) ── */
   .nodebox{perspective:1100px}
+  .userwallet{position:relative;max-width:360px;margin:0 auto 12px;background:linear-gradient(150deg,#1c2740,#141b2c);
+              border:1px solid #35507f;border-radius:12px;padding:12px 15px;cursor:pointer;
+              box-shadow:0 10px 24px rgba(0,0,0,.4);transition:box-shadow .25s,border-color .25s}
+  .userwallet .uw-head{font-size:13.5px;font-weight:800;color:#cfe0ff;display:flex;align-items:center;gap:7px}
+  .userwallet .uw-tag{font-size:9.5px;font-weight:800;color:#4f8cff;background:rgba(79,140,255,.14);
+                      border:1px solid rgba(79,140,255,.4);padding:2px 7px;border-radius:20px}
+  .userwallet .uw-wk{margin-left:auto;font-size:9.5px;font-weight:800;color:var(--btc);
+                     background:rgba(255,171,46,.12);border:1px solid rgba(255,171,46,.4);padding:2px 7px;border-radius:20px}
+  .userwallet .uw-sub{font-size:11px;color:#8b94ab;margin-top:4px;line-height:1.45}
+  .userwallet .uw-send{font-size:11px;color:#7dd3a8;margin-top:8px;font-weight:700;
+                       font-family:"SF Mono","Roboto Mono",ui-monospace,monospace}
+  .userwallet .uw-here{display:none;margin-top:7px;font-size:10.5px;font-weight:800;color:#4f8cff}
+  .userwallet.current{border-color:#4f8cff;box-shadow:0 0 0 1px #4f8cff,0 14px 30px rgba(79,140,255,.25)}
+  .userwallet.current .uw-here{display:block}
   .case{background:#04100a;border:1px solid #123d24;border-radius:13px;padding:0;position:relative;overflow:hidden;
         transform:rotateX(3deg);transform-origin:top center;
         box-shadow:0 30px 60px rgba(0,0,0,.6),inset 0 0 70px rgba(0,255,120,.05)}
@@ -304,6 +318,12 @@
     <!-- 씬 C: 노드 내부 -->
     <div class="scene hidden" id="sceneNode">
       <div class="nodebox">
+        <div class="userwallet" data-mod="access">
+          <div class="uw-head">👤 내 지갑 · 키 <span class="uw-tag">노드 밖</span><span class="uw-wk">2주</span></div>
+          <div class="uw-sub">개인키는 여기에 있어요 — 노드엔 없습니다. 거래를 만들고 서명해서 노드로 보냅니다.</div>
+          <div class="uw-send">🧾 서명한 거래를 노드로 ↓</div>
+          <span class="uw-here">● 지금 여기</span>
+        </div>
         <div class="case" id="case">
           <div class="tbarn"><i></i><i></i><i></i><span class="tt">bay@node: ~/node</span>
             <button class="backn" id="backBtn">← 바탕화면</button></div>
@@ -318,10 +338,6 @@
                 <line class="brecv brecv-btc brecv-wire" x1="95" y1="84" x2="74" y2="84"/>
                 <line class="brecv brecv-eth brecv-wire" x1="92" y1="54" x2="64" y2="54"/>
                 <line class="brecv brecv-eth brecv-wire" x1="46" y1="57" x2="46" y2="75"/>
-                <line class="wire sig sig-btc" x1="72" y1="15" x2="62" y2="15"/>
-                <line class="wire sig sig-eth" x1="72" y1="42" x2="62" y2="42"/>
-                <line class="gen-wire gen-btc" x1="84" y1="9" x2="84" y2="1"/>
-                <line class="gen-wire gen-eth" x1="96" y1="38" x2="100" y2="38"/>
               </svg>
               <div class="netin">⬇ 네트워크에서 거래 전파</div>
               <div class="netout brecv brecv-any">🧱 확정된 블록을 네트워크로 전파</div>
@@ -332,15 +348,10 @@
               <div class="brecv brecv-eth brecv-lab" style="left:84%;top:62%">🧱 다른 노드 블록<br>→ EVM 재실행 검증</div>
               <div class="wlabel exec" style="left:45%;top:28%">실행</div>
               <div class="wlabel" style="left:45%;top:66%">기록</div>
-              <div class="wlabel sig sig-btc" style="left:66%;top:11%">서명</div>
-              <div class="wlabel sig sig-eth" style="left:66%;top:39%">서명</div>
+              <div class="wlabel" style="left:67%;top:12%">🔑 서명 검증</div>
 
               <div class="fbox btc" data-mod="mempool" style="left:40%;top:5%;width:44%">
                 <span class="wk">3주</span><div class="ic">📥</div><h4>멤풀 · 거래</h4><p>밖에서 온 거래가 먼저 대기</p>
-                <span class="here"><span class="d"></span>지금 여기</span></div>
-
-              <div class="fbox btc wallet" data-mod="access">
-                <span class="wk">2주</span><div class="ic">🔑</div><h4>지갑·키</h4><p>서명으로 소유 증명</p>
                 <span class="here"><span class="d"></span>지금 여기</span></div>
 
               <div class="ethzone" id="ethzone" style="left:40%;top:34%;width:46%">
@@ -362,9 +373,6 @@
                 <span class="wk">2·4주</span><div class="ic">📒</div><h4>장부 (블록체인)</h4><p>실행 결과가 최종 기록·보관</p>
                 <span class="here"><span class="d"></span>지금 여기</span></div>
 
-              <div class="wlabel gen-btc" style="left:84%;top:5%">🧾 새 거래 생성</div>
-              <div class="wlabel gen-eth" style="left:92%;top:31%">🧾 새 거래 생성</div>
-              <div class="pkgen">🧾</div>
               <div class="pk">🧾</div>
             </div>
           </div>
@@ -496,6 +504,12 @@
     setEVM(true); $('case').classList.add('has-current');
     document.querySelectorAll('[data-mod]').forEach(el=>el.classList.toggle('current', el.dataset.mod==='contract'));
     cap('스마트 컨트랙트','6주차에 이 부분을 탐험합니다.');
+  });
+
+  document.querySelector('.userwallet').addEventListener('click',()=>{
+    $('case').classList.add('has-current');
+    document.querySelectorAll('[data-mod]').forEach(el=>el.classList.toggle('current', el.dataset.mod==='access'));
+    cap('내 지갑 · 키 (노드 밖)','2주차에 이 부분을 탐험합니다 — 개인키는 노드가 아니라 내 지갑에 있어요.');
   });
 
   selectWeek(1);
